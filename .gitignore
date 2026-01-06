@@ -1,0 +1,23 @@
+# Terraform
+*.tfstate
+*.tfstate.*
+*.tfvars
+.terraform/
+.terraform.lock.hcl
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+CLAUDE.md
+
+# Docker volumes
+prestashop-data/
+mysql-data/
+
