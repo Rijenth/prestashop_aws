@@ -88,10 +88,31 @@ resource "aws_route_table" "prestashop_public_rt" {
   }
 }
 
-# Route Table Association
+# Route Table Association (Public)
 resource "aws_route_table_association" "prestashop_public_rta" {
   subnet_id      = aws_subnet.prestashop_public_subnet.id
   route_table_id = aws_route_table.prestashop_public_rt.id
+}
+
+# Private Route Table (for RDS subnets)
+resource "aws_route_table" "prestashop_private_rt" {
+  vpc_id = aws_vpc.prestashop_vpc.id
+
+  tags = {
+    Name = "prestashop-private-rt"
+  }
+}
+
+# Private Route Table Association for Subnet 1
+resource "aws_route_table_association" "prestashop_private_rta_1" {
+  subnet_id      = aws_subnet.prestashop_private_subnet_1.id
+  route_table_id = aws_route_table.prestashop_private_rt.id
+}
+
+# Private Route Table Association for Subnet 2
+resource "aws_route_table_association" "prestashop_private_rta_2" {
+  subnet_id      = aws_subnet.prestashop_private_subnet_2.id
+  route_table_id = aws_route_table.prestashop_private_rt.id
 }
 
 # Security Group for EC2 (Web Server)
@@ -225,92 +246,26 @@ resource "aws_instance" "prestashop_web" {
               exec 2>&1
 
               echo "==================================="
-              echo "Starting user data script at $(date)"
+              echo "Initialisation de l'instance pour Ansible"
+              echo "Démarrage: $(date)"
               echo "==================================="
 
-              # Update system and install prerequisites
-              echo "Updating system packages..."
+              # Update system and install Python for Ansible
+              echo "Installation de Python et des prérequis pour Ansible..."
               export DEBIAN_FRONTEND=noninteractive
               apt-get update -y
-              apt-get upgrade -y
-
-              # Install Docker
-              echo "Installing Docker..."
               apt-get install -y \
-                ca-certificates \
-                curl \
-                gnupg \
-                lsb-release
+                python3 \
+                python3-pip \
+                python3-apt \
+                netcat
 
-              # Add Docker's official GPG key
-              install -m 0755 -d /etc/apt/keyrings
-              curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-              chmod a+r /etc/apt/keyrings/docker.gpg
-
-              # Set up Docker repository
-              echo \
-                "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-                $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
-
-              # Install Docker Engine
-              apt-get update -y
-              apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-
-              # Start and enable Docker
-              echo "Starting Docker service..."
-              systemctl start docker
-              systemctl enable docker
-
-              # Verify Docker installation
-              docker --version
-              echo "Docker installed successfully!"
-
-              # Add ubuntu user to docker group
-              usermod -aG docker ubuntu
-
-              # Wait for RDS to be ready
-              echo "Waiting for RDS to be ready..."
-              RDS_ENDPOINT="${aws_db_instance.prestashop_db.address}"
-              for i in {1..30}; do
-                if nc -z -w5 $(echo $RDS_ENDPOINT | cut -d: -f1) 3306 2>/dev/null; then
-                  echo "RDS is ready!"
-                  break
-                fi
-                echo "Attempt $i/30: RDS not ready yet, waiting..."
-                sleep 10
-              done
-
-              # Get public IP
-              echo "Fetching public IP..."
-              PUBLIC_IP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)
-              echo "Public IP: $PUBLIC_IP"
-
-              # Run PrestaShop container
-              echo "Starting PrestaShop container..."
-              docker run -d \
-                --name prestashop \
-                --restart always \
-                -p 80:80 \
-                -e DB_SERVER=${aws_db_instance.prestashop_db.address} \
-                -e DB_NAME=${var.DB_NAME} \
-                -e DB_USER=${var.DB_USER} \
-                -e DB_PASSWD=${var.DB_PASSWORD} \
-                -e PS_INSTALL_AUTO=1 \
-                -e PS_DOMAIN=$PUBLIC_IP \
-                -e PS_FOLDER_ADMIN=admin-dev \
-                -e PS_FOLDER_INSTALL=install-dev \
-                -v prestashop-data:/var/www/html \
-                prestashop/prestashop:latest
-
-              # Wait for container to start
-              sleep 10
-
-              # Check container status
-              docker ps -a
-              docker logs prestashop
+              echo "✓ Python installé avec succès"
+              python3 --version
 
               echo "==================================="
-              echo "User data script completed at $(date)"
+              echo "Instance prête pour Ansible"
+              echo "Fin: $(date)"
               echo "==================================="
               EOF
 
