@@ -223,6 +223,10 @@ $RECYCLE.BIN/
 
 # End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,intellij+all,macos,windows,linux,terraform,ansible
 
+# Environment files
+.env*
+!.env.example
+
 # Agents
 CLAUDE.md
 
