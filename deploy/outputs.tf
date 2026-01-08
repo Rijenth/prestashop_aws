@@ -42,3 +42,24 @@ output "vpc_id" {
   description = "VPC ID"
   value       = aws_vpc.prestashop_vpc.id
 }
+
+# Auto Scaling Group outputs
+output "alb_dns_name" {
+  description = "DNS name of the Application Load Balancer"
+  value       = aws_lb.mon_alb.dns_name
+}
+
+output "asg_demo_url" {
+  description = "URL to access the ASG demo page"
+  value       = "http://${aws_lb.mon_alb.dns_name}"
+}
+
+output "asg_name" {
+  description = "Name of the Auto Scaling Group"
+  value       = aws_autoscaling_group.mon_asg_web.name
+}
+
+output "target_group_arn" {
+  description = "ARN of the ALB target group"
+  value       = aws_lb_target_group.asg_target_group.arn
+}
