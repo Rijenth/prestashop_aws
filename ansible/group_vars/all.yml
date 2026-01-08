@@ -19,6 +19,14 @@ prestashop_container_name: "prestashop"
 prestashop_port: 80
 prestashop_volume: "prestashop-data"
 
+# Redis
+redis_enabled: true
+redis_image: "redis:7.2-alpine"
+redis_container_name: "redis"
+redis_conf_dir: "/opt/prestashop/redis"
+redis_conf_path: "{{ redis_conf_dir }}/redis.conf"
+redis_password: "{{ lookup('env', 'REDIS_PASSWORD') | default('') }}"
+
 # Registry (use env vars to avoid storing credentials)
 prestashop_registry_url: "registry.gitlab.com"
 prestashop_registry_username: "{{ lookup('env', 'GITLAB_DEPLOY_TOKEN_USERNAME') | default('') }}"

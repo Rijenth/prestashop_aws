@@ -95,6 +95,41 @@
         - prestashop_registry_username | length > 0
         - prestashop_registry_password | length > 0
 
+    - name: Valider la configuration Redis
+      assert:
+        that:
+          - redis_password | length > 0
+        fail_msg: "REDIS_PASSWORD est requis pour demarrer Redis. Exportez REDIS_PASSWORD avant le deploy."
+      when: redis_enabled | default(true)
+
+    - name: Creer le repertoire de configuration Redis
+      file:
+        path: "{{ redis_conf_dir }}"
+        state: directory
+        mode: '0755'
+      when: redis_enabled | default(true)
+
+    - name: Copier la configuration Redis
+      copy:
+        src: ../redis/redis.conf
+        dest: "{{ redis_conf_path }}"
+        mode: '0644'
+      when: redis_enabled | default(true)
+
+    - name: Demarrer le conteneur Redis
+      docker_container:
+        name: "{{ redis_container_name }}"
+        image: "{{ redis_image }}"
+        state: started
+        restart_policy: always
+        network_mode: host
+        command: "redis-server /usr/local/etc/redis/redis.conf --requirepass {{ redis_password }}"
+        volumes:
+          - "{{ redis_conf_path }}:/usr/local/etc/redis/redis.conf:ro"
+        sysctls:
+          net.core.somaxconn: 1024
+      when: redis_enabled | default(true)
+
     - name: Afficher les informations de connexion RDS
       debug:
         msg: "Tentative de connexion à RDS: host={{ db_server }}, port=3306"
