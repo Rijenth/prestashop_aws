@@ -1,7 +1,9 @@
-version: '3'
 services:
   prestashop:
-    image: prestashop/prestashop:latest
+    build:
+      context: .
+      dockerfile: docker/prestashop/Dockerfile
+    image: prestashop/prestashop:redis
     ports:
       - "8080:80"
     environment:
@@ -17,6 +19,7 @@ services:
       - prestashop-data:/var/www/html
     depends_on:
       - mysql
+      - redis
 
   mysql:
     image: mysql:8.0
@@ -27,6 +30,19 @@ services:
       - MYSQL_PASSWORD=prestashop
     volumes:
       - mysql-data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+
+  redis:
+    image: redis:7.2-alpine
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf", "--requirepass", "${REDIS_PASSWORD}"]
+    volumes:
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    sysctls:
+      net.core.somaxconn: 1024
+    restart: unless-stopped
+    env_file:
+      - .env
 
 volumes:
   prestashop-data:
