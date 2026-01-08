@@ -25,6 +25,7 @@ variable "INSTANCE_TYPE" {
   description = "EC2 Instance Type (t2.micro is Free Tier eligible)"
   type        = string
   default     = "t2.micro"
+  # Production -> "t3.small"
 }
 
 variable "DB_INSTANCE_CLASS" {
@@ -49,5 +50,5 @@ variable "DB_PASSWORD" {
   description = "Database password (use strong password in production)"
   type        = string
   sensitive   = true
-  default     = "CHANGE_ME_STRONG_PASSWORD_123!"
+  default     = "HELLO_WORLD_TEST_PASSWORD!"
 }
