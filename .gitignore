@@ -21,3 +21,9 @@ CLAUDE.md
 prestashop-data/
 mysql-data/
 
+# Ansible
+ansible/inventory.ini
+*.retry
+*.pem
+*.key
+

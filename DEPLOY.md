@@ -27,36 +27,33 @@ Ce projet déploie une plateforme e-commerce PrestaShop avec deux environnements
 ### Architecture de Production
 
 ```
-┌─────────────────────────────────────────────────┐
-│                    VPC                          │
-│              (10.0.0.0/16)                      │
-│                                                 │
-│  ┌──────────────────────────────────────────┐  │
-│  │    Subnet Public (10.0.1.0/24)           │  │
-│  │                                          │  │
-│  │  ┌────────────────────────────────┐     │  │
-│  │  │   EC2 t2.micro (Free Tier)     │     │  │
-│  │  │   - Ubuntu 22.04               │     │  │
-│  │  │   - Docker + PrestaShop        │     │  │
-│  │  │   - Elastic IP                 │     │  │
-│  │  └────────────────────────────────┘     │  │
-│  │                                          │  │
-│  └──────────────────────────────────────────┘  │
-│                      │                          │
-│                      │ (Connexion sécurisée)    │
-│                      ↓                          │
-│  ┌──────────────────────────────────────────┐  │
-│  │  Subnets Privés (Multi-AZ)               │  │
-│  │                                          │  │
-│  │  ┌────────────────────────────────┐     │  │
-│  │  │  RDS MySQL db.t3.micro         │     │  │
-│  │  │  - 20GB Storage (Free Tier)    │     │  │
-│  │  │  - Multi-AZ pour HA            │     │  │
-│  │  └────────────────────────────────┘     │  │
-│  │                                          │  │
-│  └──────────────────────────────────────────┘  │
-│                                                 │
-└─────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────┐
+│                    AWS Region                       │
+│                                                     │
+│  ┌───────────────────────────────────────────────-┐ │
+│  │              VPC (10.0.0.0/16)                 │ │
+│  │                                                │ │
+│  │  ┌─────────────────┐  ┌──────────────────┐     │ │
+│  │  │ Public Subnet   │  │ Private Subnets  │     │ │
+│  │  │ (10.0.1.0/24)   │  │ (10.0.2.0/24)    │     │ │
+│  │  │                 │  │ (10.0.3.0/24)    │     │ │
+│  │  │  ┌──────────┐   │  │                  │     │ │
+│  │  │  │   EC2    │   │  │  ┌───────────┐   │     │ │
+│  │  │  │PrestaShop│───┼──┼─▶│    RDS    │   │     │ │
+│  │  │  │ + Docker │   │  │  │   MySQL   │   │     │ │
+│  │  │  └────┬─────┘   │  │  └───────────┘   │     │ │
+│  │  │       │         │  │                  │     │ │
+│  │  └───────┼─────────┘  └──────────────────┘     │ │
+│  │          │                                     │ │
+│  └──────────┼──────────────────────────────────-─-┘ │
+│             │                                       │
+│      ┌──────▼────────┐                              │
+│      │ Internet GW   │                              │
+│      └───────────────┘                              │
+└───────────────────────────────────────────────────--┘
+              │
+              ▼
+          Internet
 ```
 
 ---
@@ -72,8 +69,11 @@ Ce projet déploie une plateforme e-commerce PrestaShop avec deux environnements
 ### Pour le Déploiement AWS
 
 - **Compte AWS** : avec accès Free Tier si possible
-- **Terraform** : version 1.0 ou supérieure
-- **AWS CLI** : version 2.x (optionnel mais recommandé)
+- **Terraform** (>= 1.0)
+- **Ansible** (>= 2.9)
+- **AWS CLI** (optionnel mais recommandé)
+- **Python 3** (>= 3.8)
+- **SSH client**
 - **Paire de clés SSH** : pour accéder à l'instance EC2
 
 ### Vérification des Prérequis

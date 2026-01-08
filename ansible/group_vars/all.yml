@@ -1,0 +1,20 @@
+---
+# Variables communes pour le déploiement PrestaShop
+
+# Base de données (ces valeurs seront à synchroniser avec Terraform)
+db_server: "{{ lookup('env', 'DB_ENDPOINT') | default('changeme.rds.amazonaws.com') }}"
+db_name: "prestashop"
+db_user: "prestashop_admin"
+db_password: "testdb123"
+
+# Configuration PrestaShop
+ps_install_auto: 1
+ps_folder_admin: "admin-dev"
+ps_folder_install: "install-dev"
+
+# Docker
+docker_compose_version: "2.24.0"
+prestashop_image: "prestashop/prestashop:latest"
+prestashop_container_name: "prestashop"
+prestashop_port: 80
+prestashop_volume: "prestashop-data"
