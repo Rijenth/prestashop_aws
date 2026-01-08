@@ -237,38 +237,6 @@ resource "aws_instance" "prestashop_web" {
   subnet_id              = aws_subnet.prestashop_public_subnet.id
   vpc_security_group_ids = [aws_security_group.prestashop_web_sg.id]
 
-  user_data = <<-EOF
-              #!/bin/bash
-              set -ex
-
-              # Log output to file for debugging
-              exec > >(tee /var/log/user-data.log)
-              exec 2>&1
-
-              echo "==================================="
-              echo "Initialisation de l'instance pour Ansible"
-              echo "Démarrage: $(date)"
-              echo "==================================="
-
-              # Update system and install Python for Ansible
-              echo "Installation de Python et des prérequis pour Ansible..."
-              export DEBIAN_FRONTEND=noninteractive
-              apt-get update -y
-              apt-get install -y \
-                python3 \
-                python3-pip \
-                python3-apt \
-                netcat
-
-              echo "✓ Python installé avec succès"
-              python3 --version
-
-              echo "==================================="
-              echo "Instance prête pour Ansible"
-              echo "Fin: $(date)"
-              echo "==================================="
-              EOF
-
   tags = {
     Name = "prestashop-web-server"
   }
