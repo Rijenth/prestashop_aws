@@ -86,6 +86,15 @@
       debug:
         msg: "{{ docker_version.stdout }}"
 
+    - name: Se connecter au registry Docker (si credentials fournis)
+      docker_login:
+        registry_url: "{{ prestashop_registry_url }}"
+        username: "{{ prestashop_registry_username }}"
+        password: "{{ prestashop_registry_password }}"
+      when:
+        - prestashop_registry_username | length > 0
+        - prestashop_registry_password | length > 0
+
     - name: Afficher les informations de connexion RDS
       debug:
         msg: "Tentative de connexion à RDS: host={{ db_server }}, port=3306"

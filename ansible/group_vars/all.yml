@@ -14,7 +14,12 @@ ps_folder_install: "install-dev"
 
 # Docker
 docker_compose_version: "2.24.0"
-prestashop_image: "prestashop/prestashop:latest"
+prestashop_image: "registry.gitlab.com/school-hetic/2026-w2-greenleaf/prestashop:redis-1.0.0"
 prestashop_container_name: "prestashop"
 prestashop_port: 80
 prestashop_volume: "prestashop-data"
+
+# Registry (use env vars to avoid storing credentials)
+prestashop_registry_url: "registry.gitlab.com"
+prestashop_registry_username: "{{ lookup('env', 'GITLAB_DEPLOY_TOKEN_USERNAME') | default('') }}"
+prestashop_registry_password: "{{ lookup('env', 'GITLAB_DEPLOY_TOKEN') | default('') }}"
