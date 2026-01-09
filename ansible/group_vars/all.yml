@@ -5,7 +5,7 @@
 db_server: "{{ lookup('env', 'DB_ENDPOINT') | default('changeme.rds.amazonaws.com') }}"
 db_name: "prestashop"
 db_user: "prestashop_admin"
-db_password: "testdb123"
+db_password: "HELLO_WORLD_TEST_PASSWORD!"
 
 # Configuration PrestaShop
 ps_install_auto: 1

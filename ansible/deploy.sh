@@ -60,7 +60,8 @@ echo -e "${BLUE}Étape 2: Test de connexion SSH${NC}"
 IP=$(grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' inventory.ini | head -1)
 
 echo "Attente de 30 secondes pour s'assurer que l'instance est prête..."
-sleep 30
+#sleep 30
+sleep 5
 
 if ansible prestashop -m ping; then
     echo -e "${GREEN}✓ Connexion SSH réussie${NC}"

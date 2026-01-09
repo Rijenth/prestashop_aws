@@ -20,106 +20,24 @@ data "aws_ami" "ubuntu" {
   }
 }
 
-# VPC
-resource "aws_vpc" "prestashop_vpc" {
-  cidr_block           = "10.0.0.0/16"
-  enable_dns_hostnames = true
-  enable_dns_support   = true
+# Use Default VPC
+data "aws_vpc" "default" {
+  default = true
+}
 
-  tags = {
-    Name = "prestashop-vpc"
+# Get all subnets in the default VPC
+data "aws_subnets" "default" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.default.id]
   }
-}
-
-# Internet Gateway
-resource "aws_internet_gateway" "prestashop_igw" {
-  vpc_id = aws_vpc.prestashop_vpc.id
-
-  tags = {
-    Name = "prestashop-igw"
-  }
-}
-
-# Public Subnet
-resource "aws_subnet" "prestashop_public_subnet" {
-  vpc_id                  = aws_vpc.prestashop_vpc.id
-  cidr_block              = "10.0.1.0/24"
-  availability_zone       = "${var.AWS_REGION}a"
-  map_public_ip_on_launch = true
-
-  tags = {
-    Name = "prestashop-public-subnet"
-  }
-}
-
-# Private Subnet 1
-resource "aws_subnet" "prestashop_private_subnet_1" {
-  vpc_id            = aws_vpc.prestashop_vpc.id
-  cidr_block        = "10.0.2.0/24"
-  availability_zone = "${var.AWS_REGION}a"
-
-  tags = {
-    Name = "prestashop-private-subnet-1"
-  }
-}
-
-# Private Subnet 2 (required for RDS subnet group)
-resource "aws_subnet" "prestashop_private_subnet_2" {
-  vpc_id            = aws_vpc.prestashop_vpc.id
-  cidr_block        = "10.0.3.0/24"
-  availability_zone = "${var.AWS_REGION}b"
-
-  tags = {
-    Name = "prestashop-private-subnet-2"
-  }
-}
-
-# Route Table
-resource "aws_route_table" "prestashop_public_rt" {
-  vpc_id = aws_vpc.prestashop_vpc.id
-
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.prestashop_igw.id
-  }
-
-  tags = {
-    Name = "prestashop-public-rt"
-  }
-}
-
-# Route Table Association (Public)
-resource "aws_route_table_association" "prestashop_public_rta" {
-  subnet_id      = aws_subnet.prestashop_public_subnet.id
-  route_table_id = aws_route_table.prestashop_public_rt.id
-}
-
-# Private Route Table (for RDS subnets)
-resource "aws_route_table" "prestashop_private_rt" {
-  vpc_id = aws_vpc.prestashop_vpc.id
-
-  tags = {
-    Name = "prestashop-private-rt"
-  }
-}
-
-# Private Route Table Association for Subnet 1
-resource "aws_route_table_association" "prestashop_private_rta_1" {
-  subnet_id      = aws_subnet.prestashop_private_subnet_1.id
-  route_table_id = aws_route_table.prestashop_private_rt.id
-}
-
-# Private Route Table Association for Subnet 2
-resource "aws_route_table_association" "prestashop_private_rta_2" {
-  subnet_id      = aws_subnet.prestashop_private_subnet_2.id
-  route_table_id = aws_route_table.prestashop_private_rt.id
 }
 
 # Security Group for EC2 (Web Server)
 resource "aws_security_group" "prestashop_web_sg" {
   name        = "prestashop-web-sg"
   description = "Security group for PrestaShop web server"
-  vpc_id      = aws_vpc.prestashop_vpc.id
+  vpc_id      = data.aws_vpc.default.id
 
   # HTTP
   ingress {
@@ -166,7 +84,7 @@ resource "aws_security_group" "prestashop_web_sg" {
 resource "aws_security_group" "prestashop_db_sg" {
   name        = "prestashop-db-sg"
   description = "Security group for PrestaShop database"
-  vpc_id      = aws_vpc.prestashop_vpc.id
+  vpc_id      = data.aws_vpc.default.id
 
   # MySQL
   ingress {
@@ -191,10 +109,10 @@ resource "aws_security_group" "prestashop_db_sg" {
   }
 }
 
-# DB Subnet Group
+# DB Subnet Group (using default VPC subnets)
 resource "aws_db_subnet_group" "prestashop_db_subnet_group" {
   name       = "prestashop-db-subnet-group"
-  subnet_ids = [aws_subnet.prestashop_private_subnet_1.id, aws_subnet.prestashop_private_subnet_2.id]
+  subnet_ids = data.aws_subnets.default.ids
 
   tags = {
     Name = "prestashop-db-subnet-group"
@@ -231,11 +149,12 @@ resource "aws_key_pair" "prestashop_key" {
 
 # EC2 Instance
 resource "aws_instance" "prestashop_web" {
-  ami                    = data.aws_ami.ubuntu.id
-  instance_type          = var.INSTANCE_TYPE
-  key_name               = aws_key_pair.prestashop_key.key_name
-  subnet_id              = aws_subnet.prestashop_public_subnet.id
-  vpc_security_group_ids = [aws_security_group.prestashop_web_sg.id]
+  ami                         = data.aws_ami.ubuntu.id
+  instance_type               = var.INSTANCE_TYPE
+  key_name                    = aws_key_pair.prestashop_key.key_name
+  subnet_id                   = tolist(data.aws_subnets.default.ids)[0]
+  vpc_security_group_ids      = [aws_security_group.prestashop_web_sg.id]
+  associate_public_ip_address = true
 
   tags = {
     Name = "prestashop-web-server"
@@ -244,12 +163,6 @@ resource "aws_instance" "prestashop_web" {
   depends_on = [aws_db_instance.prestashop_db]
 }
 
-# Elastic IP for EC2
-resource "aws_eip" "prestashop_eip" {
-  instance = aws_instance.prestashop_web.id
-  domain   = "vpc"
-
-  tags = {
-    Name = "prestashop-eip"
-  }
-}
+# Note: Elastic IP removed to avoid AWS Free Tier limits
+# EC2 instance will use its auto-assigned public IP instead
+# IP will change if instance is stopped/started (but not on reboot)

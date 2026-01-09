@@ -1,21 +1,21 @@
 output "prestashop_url" {
   description = "URL to access PrestaShop storefront"
-  value       = "http://${aws_eip.prestashop_eip.public_ip}"
+  value       = "http://${aws_instance.prestashop_web.public_ip}"
 }
 
 output "prestashop_admin_url" {
   description = "URL to access PrestaShop admin panel"
-  value       = "http://${aws_eip.prestashop_eip.public_ip}/admin-dev"
+  value       = "http://${aws_instance.prestashop_web.public_ip}/admin-dev"
 }
 
 output "ec2_public_ip" {
   description = "Public IP address of the EC2 instance"
-  value       = aws_eip.prestashop_eip.public_ip
+  value       = aws_instance.prestashop_web.public_ip
 }
 
 output "prestashop_public_ip" {
   description = "Public IP for Ansible inventory"
-  value       = aws_eip.prestashop_eip.public_ip
+  value       = aws_instance.prestashop_web.public_ip
 }
 
 output "ec2_instance_id" {
@@ -35,10 +35,10 @@ output "rds_database_name" {
 
 output "ssh_connection_command" {
   description = "SSH command to connect to the EC2 instance"
-  value       = "ssh -i /path/to/your/ssh_keys.pem ubuntu@${aws_eip.prestashop_eip.public_ip}"
+  value       = "ssh -i /path/to/your/ssh_keys.pem ubuntu@${aws_instance.prestashop_web.public_ip}"
 }
 
 output "vpc_id" {
-  description = "VPC ID"
-  value       = aws_vpc.prestashop_vpc.id
+  description = "VPC ID (Default VPC)"
+  value       = data.aws_vpc.default.id
 }
