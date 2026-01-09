@@ -1,0 +1,76 @@
+---
+- name: Déploiement de l'application PrestaShop
+  hosts: prestashop
+  become: yes
+  gather_facts: yes
+
+  tasks:
+    - name: Récupérer l'IP publique de l'instance
+      uri:
+        url: http://169.254.169.254/latest/meta-data/public-ipv4
+        return_content: yes
+      register: public_ip_result
+
+    - name: Définir l'IP publique comme variable
+      set_fact:
+        public_ip: "{{ public_ip_result.content }}"
+
+    - name: Afficher l'IP publique
+      debug:
+        msg: "IP publique de l'instance: {{ public_ip }}"
+
+    - name: Arrêter et supprimer le conteneur PrestaShop existant (si présent)
+      docker_container:
+        name: "{{ prestashop_container_name }}"
+        state: absent
+      ignore_errors: yes
+
+    - name: Créer et démarrer le conteneur PrestaShop
+      docker_container:
+        name: "{{ prestashop_container_name }}"
+        image: "{{ prestashop_image }}"
+        state: started
+        restart_policy: always
+        network_mode: host
+        env:
+          DB_SERVER: "{{ db_server }}"
+          DB_NAME: "{{ db_name }}"
+          DB_USER: "{{ db_user }}"
+          DB_PASSWD: "{{ db_password }}"
+          PS_INSTALL_AUTO: "{{ ps_install_auto | string }}"
+          PS_DOMAIN: "{{ public_ip }}"
+          PS_FOLDER_ADMIN: "{{ ps_folder_admin }}"
+          PS_FOLDER_INSTALL: "{{ ps_folder_install }}"
+        volumes:
+          - "{{ prestashop_volume }}:/var/www/html"
+
+    - name: Attendre que le conteneur démarre (30 secondes)
+      pause:
+        seconds: 30
+
+    - name: Vérifier l'état du conteneur PrestaShop
+      docker_container_info:
+        name: "{{ prestashop_container_name }}"
+      register: container_info
+
+    - name: Afficher l'état du conteneur
+      debug:
+        msg: "Conteneur PrestaShop: {{ container_info.container.State.Status }}"
+
+    - name: Récupérer les logs du conteneur PrestaShop
+      command: docker logs {{ prestashop_container_name }}
+      register: container_logs
+
+    - name: Afficher les 50 dernières lignes des logs
+      debug:
+        msg: "{{ container_logs.stdout_lines[-50:] }}"
+
+    - name: Message de succès
+      debug:
+        msg: |
+          ========================================
+          Déploiement terminé avec succès !
+          ========================================
+          Accédez à PrestaShop via: http://{{ public_ip }}
+          Admin: http://{{ public_ip }}/{{ ps_folder_admin }}
+          ========================================

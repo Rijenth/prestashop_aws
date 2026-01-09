@@ -1,7 +1,7 @@
 ---
 # Variables communes pour le déploiement PrestaShop
 
-# Base de données (ces valeurs seront à synchroniser avec Terraform)
+# Base de données
 db_server: "{{ lookup('env', 'DB_ENDPOINT') | default('changeme.rds.amazonaws.com') }}"
 db_name: "prestashop"
 db_user: "prestashop_admin"
