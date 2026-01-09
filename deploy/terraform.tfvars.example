@@ -1,11 +1,1 @@
-# AWS Credentials
-AWS_ACCESS_KEY = "YOUR_AWS_ACCESS_KEY_HERE"
-AWS_SECRET_KEY = "YOUR_AWS_SECRET_KEY_HERE"
-
-# SSH Key (paste your public key content)
-SSH_PUBLIC_KEY = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQ... your-email@example.com"
-
-# Database Configuration
-# DB_NAME = "prestashop"
-# DB_USER = "prestashop_admin"
-DB_PASSWORD = "YOUR_STRONG_DATABASE_PASSWORD_HERE"
+# This file is optional. Terraform inputs are provided via TF_VAR_* in env/.env.<env>.

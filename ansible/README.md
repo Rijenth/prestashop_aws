@@ -101,26 +101,23 @@ Le déploiement crée l'infrastructure suivante sur AWS :
 
 ### 2. Configuration des variables Terraform
 
-Éditez le fichier `deploy/terraform.tfvars` :
+Créez un fichier de secrets et chargez-le :
 
-```hcl
-# Remplacez par vos credentials AWS
-AWS_ACCESS_KEY = "VOTRE_ACCESS_KEY_ICI"
-AWS_SECRET_KEY = "VOTRE_SECRET_KEY_ICI"
-
-# Votre clé SSH publique (voir section suivante)
-SSH_PUBLIC_KEY = "ssh-rsa AAAAB3NzaC1yc2E... votre_email@example.com"
-
-# Configuration (optionnel, valeurs par défaut)
-AWS_REGION          = "eu-west-3"  # Paris
-INSTANCE_TYPE       = "t2.micro"   # Free Tier
-DB_INSTANCE_CLASS   = "db.t3.micro" # Free Tier
-DB_NAME             = "prestashop"
-DB_USER             = "prestashop_admin"
-DB_PASSWORD         = "VotreMotDePasseForte123!" # ⚠️ Changez-moi !
+```bash
+cp env/.env.dev.example env/.env.dev
+# Remplacez les valeurs de:
+# - TF_VAR_AWS_ACCESS_KEY / TF_VAR_AWS_SECRET_KEY
+# - TF_VAR_SSH_PUBLIC_KEY
+# - TF_VAR_AWS_REGION / TF_VAR_INSTANCE_TYPE / TF_VAR_DB_INSTANCE_CLASS
+# - TF_VAR_DB_NAME / TF_VAR_DB_USER / TF_VAR_DB_PASSWORD
+set -a
+source env/.env.dev
+set +a
 ```
 
-⚠️ **Important** : Ne commitez JAMAIS ce fichier avec vos vraies credentials dans Git !
+`terraform.tfvars` est optionnel (vous pouvez le laisser vide).
+
+⚠️ **Important** : Ne commitez JAMAIS vos credentials dans Git !
 
 ---
 
@@ -148,7 +145,7 @@ Cela crée deux fichiers :
 cat ~/.ssh/prestashop-key.pub
 ```
 
-Copiez tout le contenu (commence par `ssh-rsa` et se termine par votre email) et collez-le dans `deploy/terraform.tfvars` dans la variable `SSH_PUBLIC_KEY`.
+Copiez tout le contenu (commence par `ssh-rsa` ou `ssh-ed25519`) et collez-le dans `TF_VAR_SSH_PUBLIC_KEY` dans `env/.env.dev`.
 
 ### 3. Configurer les permissions (Important !)
 
@@ -263,6 +260,12 @@ cd ../ansible/
 
 # 2. Exécuter le script de déploiement automatique
 ./deploy.sh
+
+# Optionnel: choisir un environnement
+# DEPLOY_ENV=staging ./deploy.sh
+
+# Optionnel: charger des variables d'env (deploy.sh les charge automatiquement)
+# cp ../env/.env.dev.example ../env/.env.dev
 ```
 
 Le script fait automatiquement :
@@ -303,21 +306,44 @@ prestashop_aws/
 │   ├── main.tf                  # Configuration principale
 │   ├── vars.tf                  # Définition des variables
 │   ├── outputs.tf               # Outputs (IP, endpoints, etc.)
-│   ├── terraform.tfvars         # Valeurs des variables (credentials)
+│   ├── terraform.tfvars         # Optionnel (souvent vide)
+│   ├── environments/            # Exemples par environnement
+│   │   ├── dev.tfvars.example
+│   │   ├── staging.tfvars.example
+│   │   └── prod.tfvars.example
 │   └── terraform.tf             # Configuration du provider
 │
 ├── ansible/                     # Configuration Ansible
 │   ├── ansible.cfg              # Configuration Ansible
-│   ├── inventory.ini            # Liste des serveurs (généré auto)
 │   ├── deploy_prestashop.yml    # Playbook principal
 │   ├── group_vars/
 │   │   └── all.yml              # Variables communes
+│   ├── inventories/             # Inventaires par environnement
+│   │   ├── dev/
+│   │   │   ├── inventory.ini            # Généré automatiquement
+│   │   │   └── group_vars/
+│   │   │       └── prestashop.yml
 │   ├── deploy.sh                # Script de déploiement automatique
 │   ├── update_inventory.sh      # Script de mise à jour inventory
 │   └── README.md                # Ce fichier !
 │
+├── env/                         # Variables d'env par environnement
+│   ├── .env.dev.example
+│   ├── .env.staging.example
+│   └── .env.prod.example
+│
 └── docker-compose.yml           # Configuration Docker (dev local)
 ```
+
+---
+
+## 🔧 Gestion des variables
+
+Ordre recommandé (du plus prioritaire au moins prioritaire) :
+- `env/.env.<env>` pour les secrets (chargé par `deploy.sh`)
+- `ansible/inventories/<env>/group_vars/prestashop.yml` pour les overrides d'environnement
+- `ansible/inventories/<env>/group_vars/prestashop/terraform_outputs.yml` pour les valeurs infra
+- `ansible/group_vars/all.yml` pour les defaults globaux
 
 ---
 
@@ -359,10 +385,10 @@ Si vous préférez exécuter les étapes manuellement :
 
 ```bash
 cd ansible/
-./update_inventory.sh
+./update_inventory.sh dev
 ```
 
-Ou manuellement, éditez `inventory.ini` :
+Ou manuellement, éditez `ansible/inventories/dev/inventory.ini` :
 ```ini
 [prestashop]
 13.36.XXX.XXX ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/prestashop-key
@@ -374,7 +400,7 @@ ansible_python_interpreter=/usr/bin/python3
 ### 2. Tester la connexion
 
 ```bash
-ansible prestashop -m ping
+ansible -i inventories/dev/inventory.ini prestashop -m ping
 ```
 
 Vous devriez voir :
@@ -387,13 +413,8 @@ Vous devriez voir :
 ### 3. Exécuter le playbook
 
 ```bash
-# Récupérer l'endpoint RDS
-cd ../deploy/
-RDS_ENDPOINT=$(terraform output -raw rds_endpoint)
-
-# Exécuter le playbook
 cd ../ansible/
-ansible-playbook deploy_prestashop.yml -e "db_server=$RDS_ENDPOINT"
+ansible-playbook -i inventories/dev/inventory.ini deploy_prestashop.yml
 ```
 
 ---

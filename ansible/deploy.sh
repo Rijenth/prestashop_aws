@@ -14,6 +14,18 @@ echo -e "${BLUE}  Déploiement PrestaShop avec Ansible${NC}"
 echo -e "${BLUE}=======================================${NC}"
 echo ""
 
+ENV_NAME="${1:-${DEPLOY_ENV:-dev}}"
+ENV_FILE="../env/.env.${ENV_NAME}"
+INVENTORY_PATH="inventories/${ENV_NAME}/inventory.ini"
+
+if [ -f "${ENV_FILE}" ]; then
+    set -a
+    # shellcheck disable=SC1090
+    . "${ENV_FILE}"
+    set +a
+    echo -e "${GREEN}✓ Variables chargées: ${ENV_FILE}${NC}"
+fi
+
 # Vérifier qu'Ansible est installé
 if ! command -v ansible &> /dev/null; then
     echo -e "${RED}❌ Erreur: Ansible n'est pas installé${NC}"
@@ -39,30 +51,17 @@ echo -e "${GREEN}✓ Terraform a été initialisé${NC}"
 # Mettre à jour l'inventory
 echo ""
 echo -e "${BLUE}Étape 1: Mise à jour de l'inventory Ansible${NC}"
-./update_inventory.sh
-
-# Récupérer l'endpoint RDS depuis Terraform
-cd ../deploy
-RDS_ENDPOINT=$(terraform output -raw rds_endpoint 2>/dev/null)
-cd ../ansible
-
-if [ -z "$RDS_ENDPOINT" ]; then
-    echo -e "${RED}❌ Erreur: Impossible de récupérer l'endpoint RDS${NC}"
-    exit 1
-fi
-
-export DB_ENDPOINT="$RDS_ENDPOINT"
-echo -e "${GREEN}✓ Endpoint RDS: $DB_ENDPOINT${NC}"
+./update_inventory.sh "${ENV_NAME}"
 
 # Tester la connexion SSH
 echo ""
 echo -e "${BLUE}Étape 2: Test de connexion SSH${NC}"
-IP=$(grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' inventory.ini | head -1)
+IP=$(grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' "${INVENTORY_PATH}" | head -1)
 
 echo "Attente de 30 secondes pour s'assurer que l'instance est prête..."
-sleep 30
+sleep 5
 
-if ansible prestashop -m ping; then
+if ansible -i "${INVENTORY_PATH}" prestashop -m ping; then
     echo -e "${GREEN}✓ Connexion SSH réussie${NC}"
 else
     echo -e "${YELLOW}⚠ La connexion SSH a échoué, mais nous allons continuer...${NC}"
@@ -72,7 +71,7 @@ fi
 # Exécuter le playbook Ansible
 echo ""
 echo -e "${BLUE}Étape 3: Déploiement de PrestaShop${NC}"
-ansible-playbook deploy_prestashop.yml -e "db_server=$DB_ENDPOINT"
+ansible-playbook -i "${INVENTORY_PATH}" deploy_prestashop.yml
 
 echo ""
 echo -e "${GREEN}=======================================${NC}"

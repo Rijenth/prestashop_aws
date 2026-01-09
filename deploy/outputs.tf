@@ -33,6 +33,11 @@ output "rds_database_name" {
   value       = aws_db_instance.prestashop_db.db_name
 }
 
+output "rds_database_user" {
+  description = "RDS Database username"
+  value       = var.DB_USER
+}
+
 output "ssh_connection_command" {
   description = "SSH command to connect to the EC2 instance"
   value       = "ssh -i /path/to/your/ssh_keys.pem ubuntu@${aws_eip.prestashop_eip.public_ip}"

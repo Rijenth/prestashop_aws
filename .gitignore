@@ -223,22 +223,24 @@ $RECYCLE.BIN/
 
 # End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,intellij+all,macos,windows,linux,terraform,ansible
 
-# Environment files
-.env*
+### Ansible ###
+*.retry
+ansible/inventory.ini
+ansible/inventories/**/inventory.ini
+ansible/inventories/**/group_vars/**/terraform_outputs.yml
+
+### Environment files ###
+.env
+.env.*
+env/.env.*
+!env/.env.*.example
 !.env.example
 
-# Agents
+### Agents ###
 CLAUDE.md
 
-# Docker volumes
+### Docker volumes ###
 prestashop-data/
 mysql-data/
 
-# Ansible
-ansible/inventory.ini
-*.pem
-*.key
-
-# Docker volumes
-prestashop-data/
-mysql-data/
+### Ansible ###

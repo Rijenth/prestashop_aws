@@ -13,13 +13,13 @@ chmod 600 ~/.ssh/prestashop-key
 
 # Copier le fichier de configuration
 cd deploy/
-cp terraform.tfvars.example terraform.tfvars
+cp ../env/.env.dev.example ../env/.env.dev
+# Éditer env/.env.dev avec toutes les variables TF_VAR_* requises
+set -a
+source ../env/.env.dev
+set +a
 
-# Éditer terraform.tfvars avec :
-# - Vos credentials AWS (Access Key + Secret Key)
-# - Votre clé SSH publique (contenu de ~/.ssh/prestashop-key.pub)
-# - Un mot de passe fort pour la base de données
-nano terraform.tfvars  # ou vim, code, etc.
+# terraform.tfvars est optionnel (vous pouvez le laisser vide)
 ```
 
 ### 2️⃣ Infrastructure (5-10 minutes)
@@ -104,7 +104,7 @@ terraform destroy
 
 ## ⚠️ Important
 
-- **Ne commitez JAMAIS** `terraform.tfvars` (contient vos credentials)
+- Si vous utilisez `terraform.tfvars`, **ne le commitez jamais**
 - **Changez** le mot de passe de la base de données
 - **Détruisez** l'infrastructure quand vous ne l'utilisez plus pour éviter les frais
 

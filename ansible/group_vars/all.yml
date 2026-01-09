@@ -1,11 +1,11 @@
 ---
 # Variables communes pour le déploiement PrestaShop
 
-# Base de données (ces valeurs seront à synchroniser avec Terraform)
-db_server: "{{ lookup('env', 'DB_ENDPOINT') | default('changeme.rds.amazonaws.com') }}"
+# Base de données (surcharge par les outputs Terraform)
+db_server: "changeme.rds.amazonaws.com"
 db_name: "prestashop"
-db_user: "prestashop_admin"
-db_password: "testdb123"
+db_user: "{{ lookup('env', 'TF_VAR_DB_USER') | default('') }}"
+db_password: "{{ lookup('env', 'TF_VAR_DB_PASSWORD') | default('') }}"
 
 # Configuration PrestaShop
 ps_install_auto: 1
@@ -13,10 +13,8 @@ ps_folder_admin: "admin-dev"
 ps_folder_install: "install-dev"
 
 # Docker
-docker_compose_version: "2.24.0"
-prestashop_image: "registry.gitlab.com/school-hetic/2026-w2-greenleaf/prestashop:redis-1.0.0"
+prestashop_image: "{{ lookup('env', 'ANSIBLE_PRESTASHOP_IMAGE') | default('') }}"
 prestashop_container_name: "prestashop"
-prestashop_port: 80
 prestashop_volume: "prestashop-data"
 
 # Redis
@@ -25,9 +23,9 @@ redis_image: "redis:7.2-alpine"
 redis_container_name: "redis"
 redis_conf_dir: "/opt/prestashop/redis"
 redis_conf_path: "{{ redis_conf_dir }}/redis.conf"
-redis_password: "{{ lookup('env', 'REDIS_PASSWORD') | default('') }}"
+redis_password: "{{ lookup('env', 'ANSIBLE_REDIS_PASSWORD') | default('') }}"
 
 # Registry (use env vars to avoid storing credentials)
 prestashop_registry_url: "registry.gitlab.com"
-prestashop_registry_username: "{{ lookup('env', 'GITLAB_DEPLOY_TOKEN_USERNAME') | default('') }}"
-prestashop_registry_password: "{{ lookup('env', 'GITLAB_DEPLOY_TOKEN') | default('') }}"
+prestashop_registry_username: "{{ lookup('env', 'ANSIBLE_REGISTRY_USERNAME') | default('') }}"
+prestashop_registry_password: "{{ lookup('env', 'ANSIBLE_REGISTRY_PASSWORD') | default('') }}"

@@ -104,6 +104,12 @@ git clone https://github.com/Rijenth/prestashop_aws
 cd prestashop_aws
 ```
 
+### Notes sur les secrets
+
+Les secrets (AWS et base de donnees) sont charges via `env/.env.<env>` avec des
+variables `TF_VAR_*`. Le fichier `terraform.tfvars` est optionnel et peut rester
+vide.
+
 ### 2. Structure du Projet
 
 ```
@@ -228,62 +234,42 @@ cat ~/.ssh/prestashop_aws.pub
 
 ### Étape 2 : Configuration Terraform
 
-#### 1. Créer le Fichier de Variables
+#### 1. Créer le fichier d'environnement et le charger
 
 ```bash
-cd deploy/
-cp terraform.tfvars.example terraform.tfvars
+# Depuis le dossier deploy/
+cp ../env/.env.dev.example ../env/.env.dev
+# Remplir:
+# - TF_VAR_AWS_ACCESS_KEY / TF_VAR_AWS_SECRET_KEY
+# - TF_VAR_SSH_PUBLIC_KEY
+# - TF_VAR_AWS_REGION / TF_VAR_INSTANCE_TYPE / TF_VAR_DB_INSTANCE_CLASS
+# - TF_VAR_DB_NAME / TF_VAR_DB_USER / TF_VAR_DB_PASSWORD
+set -a
+source ../env/.env.dev
+set +a
 ```
 
-#### 2. Éditer `terraform.tfvars`
-
-```bash
-nano terraform.tfvars
-# ou
-vim terraform.tfvars
-```
-
-Remplissez les variables **obligatoires** :
-
-```hcl
-# Credentials AWS
-AWS_ACCESS_KEY = "AKIAIOSFODNN7EXAMPLE"
-AWS_SECRET_KEY = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
-
-# Clé SSH publique (contenu de ~/.ssh/prestashop_aws.pub)
-SSH_PUBLIC_KEY = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACA... prestashop-aws"
-
-# Mot de passe base de données (CHANGEZ-LE !)
-DB_PASSWORD = "VotreMotDePasseTresFort123!@#"
-```
+`terraform.tfvars` est optionnel et peut rester vide.
 
 Variables **optionnelles** (ont des valeurs par défaut) :
 
-```hcl
-# Région AWS (défaut: eu-west-3 - Paris)
-AWS_REGION = "eu-west-3"
-
-# Type d'instance EC2 (défaut: t2.micro - Free Tier)
-INSTANCE_TYPE = "t2.micro"
-
-# Type d'instance RDS (défaut: db.t3.micro - Free Tier)
-DB_INSTANCE_CLASS = "db.t3.micro"
-
-# Nom de la base de données (défaut: prestashop)
-DB_NAME = "prestashop"
-
-# Utilisateur de la base de données (défaut: prestashop_admin)
-DB_USER = "prestashop_admin"
+```bash
+# Dans env/.env.dev (exemple)
+TF_VAR_AWS_REGION=eu-west-3
+TF_VAR_INSTANCE_TYPE=t2.micro
+TF_VAR_DB_INSTANCE_CLASS=db.t3.micro
+TF_VAR_DB_NAME=prestashop
+TF_VAR_DB_USER=prestashop_admin
 ```
 
 #### 3. Sécuriser le Fichier
 
 ```bash
 # Rendre le fichier accessible uniquement par vous
-chmod 600 terraform.tfvars
+chmod 600 ../env/.env.dev
 
 # Vérifier qu'il est bien ignoré par Git
-cat ../.gitignore | grep terraform.tfvars
+cat ../.gitignore | grep env/.env
 ```
 
 ### Étape 3 : Initialisation de Terraform
@@ -440,8 +426,8 @@ terraform refresh
 #### Modifier l'Infrastructure
 
 ```bash
-# Modifier terraform.tfvars ou les fichiers .tf
-nano terraform.tfvars
+# Modifier env/.env.<env> (TF_VAR_*) ou les fichiers .tf
+nano ../env/.env.dev
 
 # Prévisualiser les changements
 terraform plan
@@ -878,7 +864,7 @@ terraform apply
 # Mot de passe PrestaShop Admin
 # Se connecter à l'admin → Paramètres avancés → Équipe → Modifier votre profil
 
-# Mot de passe base de données (déjà fait via terraform.tfvars)
+# Mot de passe base de données (déjà fait via env/.env.<env>)
 ```
 
 #### 2. Sécuriser l'Accès SSH
@@ -949,7 +935,7 @@ docker rm $(docker ps -aq)
 ### Bonnes Pratiques de Sécurité
 
 1. **Gestion des Credentials**
-   - Ne jamais commiter `terraform.tfvars` dans Git
+  - Ne jamais commiter `env/.env.*` dans Git
    - Utiliser AWS Secrets Manager pour les secrets en production
    - Rotation régulière des mots de passe (tous les 90 jours)
 
@@ -1053,7 +1039,7 @@ terraform apply
 #### Scaling Vertical (Changer de Type d'Instance)
 
 ```bash
-# Modifier terraform.tfvars
+# Modifier env/.env.<env>
 INSTANCE_TYPE = "t3.small"  # Au lieu de t2.micro
 
 # Appliquer (va recréer l'instance)
@@ -1183,7 +1169,7 @@ terraform apply
 - [ ] Compte AWS créé
 - [ ] Utilisateur IAM avec permissions créé
 - [ ] Paire de clés SSH générée
-- [ ] `terraform.tfvars` configuré avec credentials
+- [ ] `env/.env.<env>` configuré avec TF_VAR_*
 - [ ] Mot de passe base de données fort défini
 - [ ] `terraform init` exécuté avec succès
 - [ ] `terraform plan` vérifié

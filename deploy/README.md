@@ -24,16 +24,14 @@ The infrastructure uses **AWS Free Tier eligible** resources where possible:
 
 ### 1. Configure Variables
 
-Copy the example variables file:
+Create your env file and load it:
 ```bash
-cp terraform.tfvars.example terraform.tfvars
+cp ../env/.env.dev.example ../env/.env.dev
+# Fill all TF_VAR_* inputs (AWS, SSH key, DB)
+set -a
+source ../env/.env.dev
+set +a
 ```
-
-Edit `terraform.tfvars` and fill in your values:
-- `AWS_ACCESS_KEY`: Your AWS access key
-- `AWS_SECRET_KEY`: Your AWS secret key
-- `SSH_PUBLIC_KEY`: Your SSH public key content (generate with `ssh-keygen` if needed)
-- `DB_PASSWORD`: Strong password for the database
 
 ### 2. Generate SSH Key Pair (if needed)
 
@@ -41,7 +39,7 @@ Edit `terraform.tfvars` and fill in your values:
 ssh-keygen -t rsa -b 4096 -C "your-email@example.com"
 ```
 
-Copy the content of `~/.ssh/id_rsa.pub` to the `SSH_PUBLIC_KEY` variable.
+Copy the content of `~/.ssh/id_rsa.pub` to `TF_VAR_SSH_PUBLIC_KEY` in `env/.env.dev`.
 
 ### 3. Deploy Infrastructure
 
@@ -78,13 +76,13 @@ After deployment completes (typically 5-10 minutes), Terraform will output:
 
 ## Customization
 
-You can customize the deployment by modifying variables in `terraform.tfvars`:
+You can customize the deployment by modifying TF_VAR_* values in `env/.env.<env>`:
 
 - `AWS_REGION`: Change deployment region (default: eu-west-3)
 - `INSTANCE_TYPE`: Change EC2 instance size (default: t2.micro - Free Tier)
 - `DB_INSTANCE_CLASS`: Change RDS instance size (default: db.t3.micro - Free Tier)
-- `DB_NAME`: Change database name
-- `DB_USER`: Change database username
+- `DB_NAME`: Change database name (via `TF_VAR_DB_NAME`)
+- `DB_USER`: Change database username (via `TF_VAR_DB_USER`)
 
 **Note:** If you need more performance, you can upgrade to larger instances (e.g., t2.medium for EC2), but this will incur additional costs beyond the Free Tier.
 

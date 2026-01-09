@@ -24,7 +24,7 @@ variable "AWS_REGION" {
 variable "INSTANCE_TYPE" {
   description = "EC2 Instance Type (t2.micro is Free Tier eligible)"
   type        = string
-  default     = "t2.micro"
+  default     = "t3.micro"
   # Production -> "t3.small"
 }
 
@@ -43,12 +43,10 @@ variable "DB_NAME" {
 variable "DB_USER" {
   description = "Database username"
   type        = string
-  default     = "prestashop_admin"
 }
 
 variable "DB_PASSWORD" {
   description = "Database password (use strong password in production)"
   type        = string
   sensitive   = true
-  default     = "HELLO_WORLD_TEST_PASSWORD!"
 }

@@ -56,8 +56,13 @@ Le guide contient :
 cd deploy/
 
 # 1. Configurer vos credentials
-cp terraform.tfvars.example terraform.tfvars
-# Éditer terraform.tfvars avec vos identifiants AWS et clé SSH
+cp ../env/.env.dev.example ../env/.env.dev
+# Éditer env/.env.dev (TF_VAR_* pour toutes les variables Terraform)
+set -a
+source ../env/.env.dev
+set +a
+
+# terraform.tfvars est optionnel (vous pouvez le laisser vide)
 
 # 2. Déployer l'infrastructure
 terraform init

@@ -95,11 +95,24 @@
         - prestashop_registry_username | length > 0
         - prestashop_registry_password | length > 0
 
+    - name: Valider la configuration base de donnees
+      assert:
+        that:
+          - db_user | length > 0
+          - db_password | length > 0
+        fail_msg: "TF_VAR_DB_USER et TF_VAR_DB_PASSWORD sont requis pour demarrer PrestaShop."
+
+    - name: Valider l'image PrestaShop
+      assert:
+        that:
+          - prestashop_image | length > 0
+        fail_msg: "ANSIBLE_PRESTASHOP_IMAGE est requis pour demarrer PrestaShop."
+
     - name: Valider la configuration Redis
       assert:
         that:
           - redis_password | length > 0
-        fail_msg: "REDIS_PASSWORD est requis pour demarrer Redis. Exportez REDIS_PASSWORD avant le deploy."
+        fail_msg: "ANSIBLE_REDIS_PASSWORD est requis pour demarrer Redis. Exportez ANSIBLE_REDIS_PASSWORD avant le deploy."
       when: redis_enabled | default(true)
 
     - name: Creer le repertoire de configuration Redis
@@ -116,6 +129,21 @@
         mode: '0644'
       when: redis_enabled | default(true)
 
+    - name: Appliquer les sysctl Redis sur l'hote
+      sysctl:
+        name: net.core.somaxconn
+        value: "1024"
+        state: present
+        reload: yes
+      when: redis_enabled | default(true)
+
+    - name: Arreter et supprimer le conteneur Redis existant (si present)
+      docker_container:
+        name: "{{ redis_container_name }}"
+        state: absent
+      ignore_errors: yes
+      when: redis_enabled | default(true)
+
     - name: Demarrer le conteneur Redis
       docker_container:
         name: "{{ redis_container_name }}"
@@ -126,8 +154,6 @@
         command: "redis-server /usr/local/etc/redis/redis.conf --requirepass {{ redis_password }}"
         volumes:
           - "{{ redis_conf_path }}:/usr/local/etc/redis/redis.conf:ro"
-        sysctls:
-          net.core.somaxconn: 1024
       when: redis_enabled | default(true)
 
     - name: Afficher les informations de connexion RDS
@@ -144,19 +170,13 @@
         msg: "Timeout en attendant que RDS soit accessible. Vérifiez que le security group RDS autorise les connexions depuis l'instance EC2."
       when: db_server != 'changeme.rds.amazonaws.com'
 
-    - name: Récupérer l'IP publique de l'instance
-      uri:
-        url: http://169.254.169.254/latest/meta-data/public-ipv4
-        return_content: yes
-      register: public_ip_result
-
-    - name: Définir l'IP publique comme variable
+    - name: Définir le domaine PrestaShop
       set_fact:
-        public_ip: "{{ public_ip_result.content }}"
+        public_ip: "{{ prestashop_public_ip | default(ansible_host | default(inventory_hostname), true) }}"
 
-    - name: Afficher l'IP publique
+    - name: Afficher le domaine de l'instance
       debug:
-        msg: "IP publique de l'instance: {{ public_ip }}"
+        msg: "Domaine/host d'acces PrestaShop: {{ public_ip }}"
 
     - name: Arrêter et supprimer le conteneur PrestaShop existant (si présent)
       docker_container:
