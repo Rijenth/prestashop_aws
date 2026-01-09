@@ -242,3 +242,6 @@ ansible/inventory.ini
 # Docker volumes
 prestashop-data/
 mysql-data/
+
+.terraform.lock.hcl
+.terraform/

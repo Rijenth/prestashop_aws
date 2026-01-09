@@ -1,0 +1,25 @@
+---
+- name: Vérification de la connexion à la base de données RDS
+  hosts: prestashop
+  become: yes
+  gather_facts: yes
+
+  tasks:
+    - name: Afficher les informations de connexion RDS
+      debug:
+        msg: "Tentative de connexion à RDS: host={{ db_server }}, port=3306"
+      when: db_server != 'changeme.rds.amazonaws.com'
+
+    - name: Attendre que RDS soit accessible (jusqu'à 5 minutes)
+      wait_for:
+        host: "{{ db_server }}"
+        port: 3306
+        timeout: 300
+        delay: 10
+        msg: "Timeout en attendant que RDS soit accessible. Vérifiez que le security group RDS autorise les connexions depuis l'instance EC2."
+      when: db_server != 'changeme.rds.amazonaws.com'
+
+    - name: Confirmation de la connexion RDS
+      debug:
+        msg: "✓ Connexion RDS établie avec succès sur {{ db_server }}:3306"
+      when: db_server != 'changeme.rds.amazonaws.com'

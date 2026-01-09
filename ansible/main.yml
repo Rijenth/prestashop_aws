@@ -1,0 +1,27 @@
+---
+# Playbook principal pour le déploiement complet de PrestaShop sur AWS
+# Ce playbook orchestre l'ensemble du processus de déploiement
+
+- name: Déploiement complet de PrestaShop sur AWS
+  hosts: localhost
+  gather_facts: no
+  tasks:
+    - name: Début du déploiement
+      debug:
+        msg: |
+          ========================================
+          Déploiement PrestaShop sur AWS
+          ========================================
+          Étape 1: Installation de Docker
+          Étape 2: Vérification de la base de données
+          Étape 3: Déploiement de PrestaShop
+          ========================================
+
+# Étape 1: Installation et configuration de Docker
+- import_playbook: setup_docker.yml
+
+# Étape 2: Vérification de la connexion à la base de données RDS
+- import_playbook: setup_database.yml
+
+# Étape 3: Déploiement de l'application PrestaShop
+- import_playbook: deploy_prestashop_app.yml

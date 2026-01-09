@@ -7,7 +7,7 @@ GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 RED='\033[0;31m'
 YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
 echo -e "${BLUE}=======================================${NC}"
 echo -e "${BLUE}  Déploiement PrestaShop avec Ansible${NC}"
@@ -72,7 +72,7 @@ fi
 # Exécuter le playbook Ansible
 echo ""
 echo -e "${BLUE}Étape 3: Déploiement de PrestaShop${NC}"
-ansible-playbook deploy_prestashop.yml -e "db_server=$DB_ENDPOINT"
+ansible-playbook main.yml -e "db_server=$DB_ENDPOINT"
 
 echo ""
 echo -e "${GREEN}=======================================${NC}"

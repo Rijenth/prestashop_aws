@@ -18,13 +18,13 @@ variable "SSH_PUBLIC_KEY" {
 variable "AWS_REGION" {
   description = "AWS Region"
   type        = string
-  default     = "eu-west-3"
+  default     = "eu-central-2"
 }
 
 variable "INSTANCE_TYPE" {
-  description = "EC2 Instance Type (t2.micro is Free Tier eligible)"
+  description = "EC2 Instance Type (t3.micro is Free Tier eligible)"
   type        = string
-  default     = "t2.micro"
+  default     = "t3.micro"
   # Production -> "t3.small"
 }
 
